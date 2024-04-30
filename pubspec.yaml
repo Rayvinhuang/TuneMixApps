@@ -14,6 +14,7 @@ dependencies:
   firebase_database: ^10.5.4
   firebase_core: ^2.30.1
   shared_preferences: ^2.2.2
+  shimmer_animation: ^2.1.0+1
 
 dev_dependencies:
   flutter_test:
