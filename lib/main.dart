@@ -1,7 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:tunemix_apps/firebase_options.dart';
+import 'package:tunemix_apps/screens/login_screen.dart';
 import 'package:tunemix_apps/screens/landing_screen.dart';
+import 'package:tunemix_apps/screens/signup_screen.dart';
 import 'package:tunemix_apps/screens/story_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
 import 'package:tunemix_apps/screens/view_profile_screen.dart';
@@ -29,6 +31,8 @@ class MyApp extends StatelessWidget {
           '/landing': (context) => const LandingScreen(),
           '/account': (context) => const UserProfile(),
           '/view': (context) => const ViewProfile(),
+          '/signup': (context) => const SignupScreen(),
+          '/login': (context) => const LoginScreen(),
         });
   }
 }
