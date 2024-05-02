@@ -1,6 +1,7 @@
 //import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
@@ -53,11 +54,6 @@ class _UserProfileState extends State<UserProfile> {
   //   }
   // }
 
-  // // TODO: 5. Implementasi fungsi signIn
-  // void signIn() {
-  //   // Perform your sign-in logic here
-  //   // For example, you can show a sign-in dialog
-  // }
 
   // // TODO: 6. Implementasi fungsi signOut
   // void signOut() async {
@@ -95,119 +91,36 @@ class _UserProfileState extends State<UserProfile> {
   @override
   void initState() {
     super.initState();
-   // _loadUserData();
+    _loadUserData();
   }
 
-  // _loadUserData() async {
-  //   print('1');
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   print('2');
-  //   if (prefs.containsKey('key')) {
-  //     print('3');
+   Future<void> _loadUserData() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
 
-  //     String encryptedUserName = prefs.getString('Username') ?? '';
+        if (userData.exists) {
+          setState(() {
+            String email = userData['username'];
+            userName = email.split('@')[0];
+            isSignedIn = true;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
 
-  //     print('4');
-  //     final encrypt.Key key =
-  //         encrypt.Key.fromBase64(prefs.getString('key') ?? '');
-  //     final iv = encrypt.IV.fromBase64(prefs.getString('iv') ?? '');
 
-  //     print('5');
-  //     final encrypter = encrypt.Encrypter(encrypt.AES(key));
-  //     final decryptedUsername = encrypter.decrypt64(encryptedUserName, iv: iv);
-
-  //     print('6');
-  //     setState(() {
-  //       print('7');
-  //       isSignedIn = prefs.getBool('isSignedIn') ?? false;
-  //       userName = decryptedUsername;
-  //     });
-  //   }
-  // }
 
   void _signIn() {
     Navigator.pushNamed(context, '/signin');
   }
-
-  void _signOut() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isSignedIn', false);
-    prefs.setString('userName', '');
-
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      Navigator.pushReplacementNamed(context, '/landing');
-    });
-
-   // _loadUserData();
-  }
-
-  // void editUserName() async {
-  //   await showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: const Text('Edit Nama'),
-  //         content: TextField(
-  //           controller: _editedUserNameController,
-  //           decoration: const InputDecoration(labelText: 'Input nama'),
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.pop(context);
-  //             },
-  //             child: const Text('Cancel'),
-  //           ),
-  //           TextButton(
-  //             onPressed: () async {
-  //               SharedPreferences prefs = await SharedPreferences.getInstance();
-  //               if (_editedUserNameController.text.isNotEmpty &&
-  //                   prefs.containsKey('key') &&
-  //                   prefs.containsKey('iv')) {
-  //                 final encrypt.Key key =
-  //                     encrypt.Key.fromBase64(prefs.getString('key') ?? '');
-  //                 final iv = encrypt.IV.fromBase64(prefs.getString('iv') ?? '');
-
-  //                 final encrypter = encrypt.Encrypter(encrypt.AES(key));
-
-  //                 final encryptedUserName = encrypter.encrypt(
-  //                   _editedUserNameController.text,
-  //                   iv: iv,
-  //                 );
-
-  //                 prefs.setString('Username', encryptedUserName.base64);
-
-  //                 // Reload user data to update the state
-  //                 _loadUserData();
-
-  //                 Navigator.pop(context);
-  //               }
-  //             },
-  //             child: const Text('Save'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  // void signOut() async {
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   prefs.setBool('isSignedIn', false);
-  //   prefs.remove('Username');
-  //   prefs.remove('key');
-  //   prefs.remove('iv');
-
-  //   Navigator.pushNamedAndRemoveUntil(context, '/landing', (route) => false);
-
-  //   setState(() {
-  //     userName = '';
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {

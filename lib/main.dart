@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         debugShowCheckedModeBanner: false,
-        home: const LandingScreen(),
+        home: const UserProfile(),
         initialRoute: '/',
         routes: {
           '/landing': (context) => const LandingScreen(),

@@ -1,10 +1,10 @@
 import 'dart:io';
 
-//import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 //import 'package:image_picker/image_picker.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
@@ -52,35 +52,23 @@ class _ViewProfileState extends State<ViewProfile> {
   @override
   void initState() {
     super.initState();
-   // _loadUserData();
+    _loadUserData();
   }
 
-/*
-  _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.containsKey('key')) {
-      String encryptedUserName = prefs.getString('Username') ?? '';
-      final encrypt.Key key =
-          encrypt.Key.fromBase64(prefs.getString('key') ?? '');
-      final iv = encrypt.IV.fromBase64(prefs.getString('iv') ?? '');
-      final encrypter = encrypt.Encrypter(encrypt.AES(key));
-      final decryptedUsername = encrypter.decrypt64(encryptedUserName, iv: iv);
 
-      setState(() {
-        isSignedIn = prefs.getBool('isSignedIn') ?? false;
-        userName = decryptedUsername;
-      });
-    }
-  }
-*/
   void _signIn() {
     Navigator.pushNamed(context, '/signin');
   }
 
   void _signOut() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isSignedIn', false);
-    prefs.setString('userName', '');
+     try {
+      await FirebaseAuth.instance.signOut();
+      setState(() {
+        isSignedIn = false;
+      });
+    } catch (e) {
+      print('Error signing out: $e');
+    }
 
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       Navigator.of(context).popUntil((route) => route.isFirst);
@@ -90,8 +78,30 @@ class _ViewProfileState extends State<ViewProfile> {
       Navigator.pushReplacementNamed(context, '/landing');
     });
 
-    //_loadUserData();
+    _loadUserData();
   }
+
+  Future<void> _loadUserData() async {
+      try {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          DocumentSnapshot userData = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .get();
+
+          if (userData.exists) {
+            setState(() {
+              String email = userData['username'];
+              userName = email.split('@')[0];
+              isSignedIn = true;
+            });
+          }
+        }
+      } catch (e) {
+        print('Error fetching user data: $e');
+      }
+    }
 
 /*
  void editUsername() async {
@@ -173,6 +183,8 @@ class _ViewProfileState extends State<ViewProfile> {
     }
   }
 */
+
+
 
   Widget _buildBottomSheetContent(BuildContext context) {
     return Container(
@@ -467,7 +479,7 @@ Widget _buildEditOptions(BuildContext context) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            userName,
+                            '$userName',
                             style: const TextStyle(
                               fontFamily: 'Inknut Antiqua',
                               fontWeight: FontWeight.bold,

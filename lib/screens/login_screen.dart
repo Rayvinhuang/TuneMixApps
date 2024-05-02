@@ -54,12 +54,11 @@ class _LoginScreensState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-
-  try {
     final String username = _usernameController.text.trim() + '@gmail.com';
     final String password = _passwordController.text.trim();
 
-      if (username.isEmpty) {
+
+    if (username.isEmpty) {
     setState(() {
       _usernameError = 'Username is required'; 
     });
@@ -72,11 +71,8 @@ class _LoginScreensState extends State<LoginScreen> {
     });
     return;
   }
-    // Reset error text
-    setState(() {
-      _errorText = '';
-    });
 
+  try {
     final UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: username,
       password: password,
@@ -116,44 +112,10 @@ class _LoginScreensState extends State<LoginScreen> {
 }
 
 
-void handleResetPassword(String newPassword) async {
-  final String username = _usernameController.text;
-
-  try {
-    final QuerySnapshot<Map<String, dynamic>> result = await FirebaseFirestore.instance
-        .collection('users')
-        .where('username', isEqualTo: username)
-        .get();
-
-    if (result.docs.isNotEmpty) {
-      final userDoc = result.docs.first;
-      
-      await userDoc.reference.update({'password': newPassword});
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password Reset Successfully'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User not found. Please try again.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  } catch (e) {
-    print('Error resetting password: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('An error occurred. Please try again later.'),
-        duration: Duration(seconds: 3),
-      ),
-    );
+  void handleResetPassword(String newPassword) async {
+    print('New Password: $newPassword');
+    
   }
-}
 
   void handleForgotPassword() {
     Navigator.push(
@@ -276,7 +238,9 @@ void handleResetPassword(String newPassword) async {
                             controller: _usernameController,
                             cursorColor: const Color(0xFF000AFF),
                             decoration: InputDecoration(
-                                errorText: _usernameError.isNotEmpty ? _usernameError : null,
+                                errorText:_errorText == 'Username is required'
+                            ? 'Username is required'
+                            : null,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15.0),
                                 borderSide: const BorderSide(

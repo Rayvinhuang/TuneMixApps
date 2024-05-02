@@ -65,6 +65,8 @@ class _SignupScreenState extends State<SignupScreen> {
         'first_name': fName,
         'last_name': lName,
         'username': _usernameController.text.trim(),
+        'password': password,
+        'confirm_password': cfPw
       });
 
       Navigator.pushReplacement(

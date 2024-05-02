@@ -46,6 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1078918469373',
     projectId: 'tunemix-e7687',
     authDomain: 'tunemix-e7687.firebaseapp.com',
+    databaseURL: 'https://tunemix-e7687-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'tunemix-e7687.appspot.com',
     measurementId: 'G-F3WLEVBST9',
   );
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     appId: '1:1078918469373:android:5c031b4657ec42f5b69094',
     messagingSenderId: '1078918469373',
     projectId: 'tunemix-e7687',
+    databaseURL: 'https://tunemix-e7687-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'tunemix-e7687.appspot.com',
   );
 
@@ -63,6 +65,7 @@ class DefaultFirebaseOptions {
     appId: '1:1078918469373:ios:f395f8cecab1eb0db69094',
     messagingSenderId: '1078918469373',
     projectId: 'tunemix-e7687',
+    databaseURL: 'https://tunemix-e7687-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'tunemix-e7687.appspot.com',
     iosBundleId: 'com.example.tunemixApps',
   );
@@ -72,6 +75,7 @@ class DefaultFirebaseOptions {
     appId: '1:1078918469373:ios:f395f8cecab1eb0db69094',
     messagingSenderId: '1078918469373',
     projectId: 'tunemix-e7687',
+    databaseURL: 'https://tunemix-e7687-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'tunemix-e7687.appspot.com',
     iosBundleId: 'com.example.tunemixApps',
   );
@@ -82,6 +86,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1078918469373',
     projectId: 'tunemix-e7687',
     authDomain: 'tunemix-e7687.firebaseapp.com',
+    databaseURL: 'https://tunemix-e7687-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'tunemix-e7687.appspot.com',
     measurementId: 'G-QN0SFBGE1X',
   );

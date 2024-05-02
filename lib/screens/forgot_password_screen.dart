@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tunemix_apps/screens/login_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final Function(String) onUpdatePassword;
@@ -19,24 +21,74 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _isButtonDisabled = true;
   bool _obscurePassword = true;
 
+void _updatePassword(String newPassword) async {
+    try {
+      // Dapatkan pengguna saat ini
+      User? user = FirebaseAuth.instance.currentUser;
+
+      // Ubah kata sandi pengguna
+      await user?.updatePassword(newPassword);
+
+      // Panggil fungsi onUpdatePassword untuk memberitahu penggunaan password telah diubah
+      widget.onUpdatePassword(newPassword);
+
+      // Tampilkan dialog sukses
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Password Updated"),
+            content: Text("Password updated successfully."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (error) {
+      // Tampilkan pesan error jika terjadi kesalahan
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text(error.toString()),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
+  void _resetPassword() {
+    if (newPasswordController.text == confirmPasswordController.text) {
+      _updatePassword(newPasswordController.text);
+    } else {
+      setState(() {
+        showWarning = true;
+      });
+    }
+  }
+
   bool isFieldsValid() {
     return newPasswordController.text.isNotEmpty &&
         confirmPasswordController.text.isNotEmpty &&
         newPasswordController.text == confirmPasswordController.text;
   }
 
-/*
-  void _updatePassword(String newPassword) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final encrypt.Key key = encrypt.Key.fromLength(32);
-    final encrypt.IV iv = encrypt.IV.fromLength(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(key));
-    final encryptedPassword = encrypter.encrypt(newPassword, iv: iv);
-    prefs.setString('Password', encryptedPassword.base64);
-    prefs.setString('key', key.base64);
-    prefs.setString('iv', iv.base64);
-  }
-*/
   void _togglePasswordVisibility() {
     setState(() {
       _obscurePassword = !_obscurePassword;
@@ -73,7 +125,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-                tileMode: TileMode.clamp,
               ),
             ),
             padding: const EdgeInsets.all(16),
@@ -178,28 +229,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // ElevatedButton(
-                    //   onPressed: isFieldsValid() && !_isButtonDisabled
-                    //       ? () => _resetPassword()
-                    //       : null,
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: const Color(0xFF92B576),
-                    //     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    //     shape: ContinuousRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(8.0),
-                    //     ),
-                    //     elevation: 5.0,
-                    //   ),
-                    //   child: const Text(
-                    //     'Done',
-                    //     style: TextStyle(
-                    //       fontFamily: 'InriaSans',
-                    //       fontSize: 15,
-                    //       fontWeight: FontWeight.bold,
-                    //       color: Color(0xFF000000),
-                    //     ),
-                    //   ),
-                    // ),
+                    ElevatedButton(
+                      onPressed: isFieldsValid() && !_isButtonDisabled
+                          ? _resetPassword
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF92B576),
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        shape: ContinuousRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        elevation: 5.0,
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(
+                          fontFamily: 'InriaSans',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF000000),
+                        ),
+                      ),
+                    ),
                     if (showWarning)
                       const Padding(
                         padding: EdgeInsets.only(top: 8),
@@ -244,28 +295,4 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
     );
   }
-
-/*
-  void _resetPassword() async {
-    try {
-      final String newPassword = newPasswordController.text.trim();
-
-      final encrypt.Key key = encrypt.Key.fromLength(32);
-      final encrypt.IV iv = encrypt.IV.fromLength(16);
-
-      final encrypter = encrypt.Encrypter(encrypt.AES(key));
-      final encryptedPassword = encrypter.encrypt(newPassword, iv: iv);
-
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString('Password', encryptedPassword.base64);
-      prefs.setString('key', key.base64);
-      prefs.setString('iv', iv.base64);
-
-      Navigator.pop(context);
-      widget.onUpdatePassword(newPassword);
-    } catch (e) {
-      print('An error occurred during password reset: $e');
-    }
-  }
-*/
 }
