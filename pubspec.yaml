@@ -17,6 +17,8 @@ dependencies:
   shimmer_animation: ^2.1.0+1
   firebase_auth: ^4.19.4
   cloud_firestore: ^4.17.2
+  image_picker: ^1.1.1
+  firebase_storage: ^11.7.4
 
 dev_dependencies:
   flutter_test:

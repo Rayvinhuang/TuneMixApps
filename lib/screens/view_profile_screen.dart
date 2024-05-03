@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,8 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-
-//import 'package:image_picker/image_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
@@ -29,7 +29,9 @@ class _ViewProfileState extends State<ViewProfile> {
   int followersCount = 0;
   int followingCount = 0;
   bool isDarkMode = false;
-  late File _image;
+
+  File? _imageFile; 
+  final ImagePicker _picker = ImagePicker();
 
   void incrementFollowers() {
     setState(() {
@@ -55,13 +57,8 @@ class _ViewProfileState extends State<ViewProfile> {
     _loadUserData();
   }
 
-
-  void _signIn() {
-    Navigator.pushNamed(context, '/signin');
-  }
-
   void _signOut() async {
-     try {
+    try {
       await FirebaseAuth.instance.signOut();
       setState(() {
         isSignedIn = false;
@@ -82,55 +79,53 @@ class _ViewProfileState extends State<ViewProfile> {
   }
 
   Future<void> _loadUserData() async {
-      try {
-        final currentUser = FirebaseAuth.instance.currentUser;
-        if (currentUser != null) {
-          DocumentSnapshot userData = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .get();
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
 
-          if (userData.exists) {
-            setState(() {
-              String email = userData['username'];
-              userName = email.split('@')[0];
-              isSignedIn = true;
-            });
-          }
+        if (userData.exists) {
+          setState(() {
+            String email = userData['username'];
+            userName = email.split('@')[0];
+            isSignedIn = true;
+          });
         }
-      } catch (e) {
-        print('Error fetching user data: $e');
       }
+    } catch (e) {
+      print('Error fetching user data: $e');
     }
+  }
 
-/*
- void editUsername() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (_editedUserNameController.text.isNotEmpty &&
-        prefs.containsKey('key') &&
-        prefs.containsKey('iv')) {
-      final encrypt.Key key =
-          encrypt.Key.fromBase64(prefs.getString('key') ?? '');
-      final iv = encrypt.IV.fromBase64(prefs.getString('iv') ?? '');
-
-      final encrypter = encrypt.Encrypter(encrypt.AES(key));
-
-      final encryptedUserName = encrypter.encrypt(
-        _editedUserNameController.text,
-        iv: iv,
-      );
-
-      prefs.setString('Username', encryptedUserName.base64);
-
-      _loadUserData();
-
+  void _editPhoto(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
       setState(() {
-        _userName = _editedUserNameController.text;
+        _imageFile = File(pickedFile.path);
       });
+    } else {
+      print('No image selected.');
     }
-}
-*/
-   void _showEditProfileBottomSheet(BuildContext context) {
+  }
+
+  Widget _buildProfileImage() {
+    if (_imageFile != null) {
+      return Image.file( 
+        _imageFile!,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return Image.network( 
+        'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+        fit: BoxFit.cover,
+      );
+    }
+  }
+
+  void _showEditProfileBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -150,7 +145,7 @@ class _ViewProfileState extends State<ViewProfile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          contentPadding: EdgeInsets.zero, 
+          contentPadding: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
@@ -161,30 +156,6 @@ class _ViewProfileState extends State<ViewProfile> {
       },
     );
   }
-
-/*
-  void _chooseFromLibrary() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      print('File gambar terpilih: ${pickedFile.path}');
-    } else {
-      print('Tidak ada gambar yang dipilih.');
-    }
-  }
-
-  void _takePhoto() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    } else {
-      print('No image selected.');
-    }
-  }
-*/
-
-
 
   Widget _buildBottomSheetContent(BuildContext context) {
     return Container(
@@ -197,7 +168,7 @@ class _ViewProfileState extends State<ViewProfile> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
                 onTap: () {
@@ -208,12 +179,11 @@ class _ViewProfileState extends State<ViewProfile> {
                   style: TextStyle(
                     fontFamily: 'Itim',
                     fontSize: 15,
-                    color: Colors.black
+                    color: Colors.black,
                   ),
                 ),
               ),
-              const SizedBox(width: 75),
-               const Text(
+              const Text(
                 'EDIT PROFILE',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -222,200 +192,220 @@ class _ViewProfileState extends State<ViewProfile> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-           const SizedBox(width: 75),
-            GestureDetector(
-            onTap: () {
-              // Save logic
-              // Implement your logic here
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Save',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Itim',
-                fontSize: 15,
+              GestureDetector(
+                onTap: () {
+                  // Save logic
+                  // Implement your logic here
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'Save',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Itim',
+                    fontSize: 15,
+                  ),
+                ),
               ),
-            ),
-          ) ,
+            ],
+          ),
+          const SizedBox(height: 2),
+          const Divider(
+            color: Colors.white,
+            thickness: 1,
+          ),
+          const SizedBox(height: 10),
+
+          Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    child: _buildProfileImage(), 
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    left: 83,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          _showEditOptions(context);
+                        },
+                        icon: const Icon(
+                          Icons.edit,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+
+              Positioned(
+                bottom: 0,
+                right: 0,
+                left: 83,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      _showEditOptions(context);
+                    },
+                    icon: const Icon(
+                      Icons.edit,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          Row(
+            children: [
+              const Text(
+                'USERNAME',
+                style: TextStyle(
+                  fontFamily: 'Concert One',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: _editedUserNameController,
+                  onChanged: (value) {
+                    setState(() {
+                      _userName = value;
+                    });
+                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Enter new username',
+                    hintStyle: TextStyle(
+                      fontFamily: 'Itim',
+                      fontSize: 13,
+                      color: Colors.black,
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-      const SizedBox(height: 2),
-      const Divider(
-        color: Colors.white,
-        thickness: 1,
-      ),
-      const SizedBox(height: 10),
-
-        Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              left: 83,
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    _showEditOptions(context);
-                  },
-                  icon: const Icon(
-                    Icons.edit,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 30),
-        Row(
-          children: [
-            const Text(
-              'USERNAME',
-              style: TextStyle(
-                fontFamily: 'Concert One',
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              flex: 2,
-              child: TextFormField(
-                controller: _editedUserNameController,
-                onChanged: (value) {
-                  setState(() {
-                    _userName = value;
-                  });
-                },
-                decoration: const InputDecoration(
-                  hintText: 'Enter new username',
-                  hintStyle: TextStyle(
-                    fontFamily: 'Itim',
-                    fontSize: 13,
-                    color: Colors.black,
-                  ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  )
-                ),
-              ),
-            ),
-          ],
-        ),
-          ],
-        ),
-      );
+    );
   }
 
-Widget _buildEditOptions(BuildContext context) {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    color: Colors.transparent, 
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+  Widget _buildEditOptions(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.transparent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           const Padding(
-          padding: EdgeInsets.only(bottom: 16.0),
-          child: Text(
-            'CHANGE PROFILE PHOTO',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Concert One'
+            padding: EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              'CHANGE PROFILE PHOTO',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Concert One',
+              ),
             ),
           ),
-          
-        ),
-        GestureDetector(
-          onTap: () {
-           // _chooseFromLibrary;
-          },
-          child: const Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('Choose from Library'),
-                Divider(color: Colors.black),
-              ],
+          GestureDetector(
+            onTap: () {
+              _editPhoto(ImageSource.gallery);
+            },
+            child: const Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Choose from Library'),
+                  Divider(color: Colors.black),
+                ],
+              ),
             ),
           ),
-        ),
-        GestureDetector(
-          onTap: () {
-           // _takePhoto();
-          },
-          child: const Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('Take Photo'),
-                Divider(color: Colors.black),
-              ],
+          GestureDetector(
+            onTap: () {
+              _editPhoto(ImageSource.camera);
+            },
+            child: const Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Take Photo'),
+                  Divider(color: Colors.black),
+                ],
+              ),
             ),
           ),
-        ),
-        GestureDetector(
-          onTap: () {
-            // Lakukan tindakan saat "Remove Current Photo" dipilih
-            // Contoh: Hapus foto profil
-          },
-          child: const Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('Remove Current Photo'),
-                Divider(color: Colors.black),
-              ],
+          GestureDetector(
+            onTap: () {
+              // Lakukan tindakan saat "Remove Current Photo" dipilih
+              // Contoh: Hapus foto profil
+            },
+            child: const Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Remove Current Photo'),
+                  Divider(color: Colors.black),
+                ],
+              ),
             ),
           ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  fontFamily: 'Itim',
-                  color: Colors.black
-                ),),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'Itim',
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +435,7 @@ Widget _buildEditOptions(BuildContext context) {
                   Color(0xD5F4D3D4),
                   Color(0x3D6C5278),
                   Color(0x9DD6EDB2),
-                  Color(0xB97DAEA5)
+                  Color(0xB97DAEA5),
                 ],
                 stops: [0, 0.2, 0.5, 0.8, 1],
                 begin: AlignmentDirectional(0, -1),
@@ -468,61 +458,58 @@ Widget _buildEditOptions(BuildContext context) {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                         ),
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-                          fit: BoxFit.cover,
-                        ),
+                        child: _buildProfileImage(),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
                         child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '$userName',
-                            style: const TextStyle(
-                              fontFamily: 'Inknut Antiqua',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$userName',
+                              style: const TextStyle(
+                                fontFamily: 'Inknut Antiqua',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Text(
-                                '$followersCount followers',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontFamily: 'Inknut Antiqua',
-                                ),
-                              ),
-                              const SizedBox(width: 15),
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: 5,
-                                    height: 5,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.black,
-                                    ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  '$followersCount followers',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontFamily: 'Inknut Antiqua',
                                   ),
-                                ],
-                              ),
-                              const SizedBox(width: 15),
-                              Text(
-                                '$followingCount following',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontFamily: 'Inknut Antiqua',
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 15),
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Container(
+                                      width: 5,
+                                      height: 5,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 15),
+                                Text(
+                                  '$followingCount following',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontFamily: 'Inknut Antiqua',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      )
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -540,83 +527,80 @@ Widget _buildEditOptions(BuildContext context) {
                           fixedSize: const Size(69, 39),
                         ),
                         child: const Text(
-                            'Edit',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 8,
-                              fontFamily: 'Inknut Antiqua'
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () {
-                            // Tambahkan logika untuk dark mode di sini
-                            setState(() {
-                              // Tambahkan logika untuk mengubah warna lingkaran
-                            });
-                          },
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white, 
-                            ),
-                             child: Image.asset(
-                              'images/darkmode.png',
-                              color: Colors.black, // Sesuaikan warna ikon dengan logika dark mode
-                              width: 16,
-                              height: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        IconButton(
-                          onPressed: () {
-                            // Tambahkan logika untuk tombol Share di sini
-                          },
-                          icon: const Icon(
-                            Icons.ios_share_rounded,
+                          'Edit',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
                             color: Colors.black,
-                            size: 24,
+                            fontSize: 8,
+                            fontFamily: 'Inknut Antiqua',
                           ),
                         ),
-                      ],
-                    ),
-
-                    //logout
-                    Padding(
-                      padding: const EdgeInsets.all(50), 
-                    
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {
+                          // Tambahkan logika untuk dark mode di sini
+                          setState(() {
+                            // Tambahkan logika untuk mengubah warna lingkaran
+                          });
+                        },
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          child: Image.asset(
+                            'images/darkmode.png',
+                            color: Colors.black, // Sesuaikan warna ikon dengan logika dark mode
+                            width: 16,
+                            height: 16,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      IconButton(
+                        onPressed: () {
+                          // Tambahkan logika untuk tombol Share di sini
+                        },
+                        icon: const Icon(
+                          Icons.ios_share_rounded,
+                          color: Colors.black,
+                          size: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                  //logout
+                  Padding(
+                    padding: const EdgeInsets.all(50),
                     child: ElevatedButton(
                       onPressed: () {
                         _signOut();
                       },
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          fixedSize: const Size(102, 34),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
                         ),
+                        fixedSize: const Size(102, 34),
+                      ),
                       child: const Text(
-                         'Logout',
-                         textAlign: TextAlign.center,
-                           style: TextStyle(
-                              fontFamily: 'Concert One',
-                              fontSize: 18,
-                              
-                           ),
-                       ),
+                        'Logout',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Concert One',
+                          fontSize: 18,
+                        ),
+                      ),
                     ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
+        ],
       ),
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
@@ -650,15 +634,15 @@ Widget _buildEditOptions(BuildContext context) {
               label: 'Search',
             ),
             BottomNavigationBarItem(
-               icon: Image.asset(
+              icon: Image.asset(
                 _currentIndex == 2
                     ? 'images/story.png'
                     : 'images/story.png',
-                  width: 24,
-                  height: 24,
-                  color: _currentIndex == 2
-                      ? Colors.deepPurple
-                      :  const Color.fromARGB(255, 48, 162, 159)
+                width: 24,
+                height: 24,
+                color: _currentIndex == 2
+                    ? Colors.deepPurple
+                    : const Color.fromARGB(255, 48, 162, 159),
               ),
               label: 'Story',
             ),
@@ -730,8 +714,8 @@ Widget _buildEditOptions(BuildContext context) {
               return const StoryScreen();
             case 3:
               return const FavoriteScreen(
-               // favoriteSongs: [],
-               // favoritePodcasts: [],
+                // favoriteSongs: [],
+                // favoritePodcasts: [],
               );
             case 4:
               return const UserProfile();
