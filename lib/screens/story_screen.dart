@@ -284,12 +284,12 @@ class _StoryScreenState extends State<StoryScreen> {
                                 thickness: 1,
                                 color: Color(0xF8000000),
                               ),
-                              const Row(
+                              Row(
                                 mainAxisSize: MainAxisSize.max,
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
+                                  const Row(
                                     mainAxisSize: MainAxisSize.max,
                                     children: [
                                       Icon(
@@ -306,24 +306,29 @@ class _StoryScreenState extends State<StoryScreen> {
                                       ),
                                     ],
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Icon(
-                                        Icons.comment,
-                                        color: Colors.black,
-                                        size: 24,
-                                      ),
-                                      Text(
-                                        '1',
-                                        style: TextStyle(
-                                            fontFamily: 'Itim',
-                                            fontSize: 15,
-                                            color: Colors.black),
-                                      ),
-                                    ],
+                                  GestureDetector(
+                                    onTap: () {
+                                      _showCommentPopup(context);
+                                    },
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.max,
+                                      children: [
+                                        Icon(
+                                          Icons.comment,
+                                          color: Colors.black,
+                                          size: 24,
+                                        ),
+                                        Text(
+                                          '1',
+                                          style: TextStyle(
+                                              fontFamily: 'Itim',
+                                              fontSize: 15,
+                                              color: Colors.black),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  Icon(
+                                  const Icon(
                                     Icons.share_sharp,
                                     color: Colors.black,
                                     size: 24,
@@ -342,6 +347,161 @@ class _StoryScreenState extends State<StoryScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showCommentPopup(BuildContext context) {
+    // Fungsi untuk menampilkan popup komentar
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              const SizedBox(
+                width: 60,
+                child: Divider(
+                  thickness: 5,
+                  color: Colors.black,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                          ),
+                          child: Image.asset(
+                            'images/arrowback.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsetsDirectional.fromSTEB(10, 0, 0, 0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hello World',
+                                style: TextStyle(
+                                    fontFamily: 'Itim',
+                                    fontSize: 15,
+                                    color: Colors.black),
+                              ),
+                              Text(
+                                'Hello World',
+                                style: TextStyle(
+                                    fontFamily: 'Itim',
+                                    fontSize: 12,
+                                    color: Colors.black),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '1 minutes ago',
+                                style: TextStyle(
+                                    fontFamily: 'Itim',
+                                    fontSize: 8,
+                                    color: Colors.black),
+                              ),
+                              Icon(
+                                Icons.favorite_sharp,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              Icon(
+                                Icons.comment_rounded,
+                                color: Colors.cyanAccent,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(
+                      thickness: 1,
+                      color: Colors.black,
+                    ),
+                  ],
+                ),
+              ),
+              Align(
+                alignment: const AlignmentDirectional(0, 1),
+                child: Container(
+                  width: double.infinity,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(10, 15, 10, 15),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                          ),
+                          child: Image.asset(
+                            'images/arrowback.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Container(
+                          width: 280,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(30)),
+                          child: Align(
+                            alignment: const AlignmentDirectional(0, 0),
+                            child: Text(
+                              'Hello World',
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Align(
+                            alignment: const AlignmentDirectional(1, 0),
+                            child: Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
