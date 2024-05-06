@@ -713,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> {
                // favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile();
+              return const UserProfile(imageUrl: '',);
             default:
               return Container();
           }

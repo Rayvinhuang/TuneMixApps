@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/landing': (context) => const LandingScreen(),
-          '/account': (context) => const UserProfile(),
+          '/account': (context) => const UserProfile(imageUrl: '',),
           '/view': (context) => const ViewProfile(),
           '/signup': (context) => const SignupScreen(),
           '/login': (context) => const LoginScreen(),

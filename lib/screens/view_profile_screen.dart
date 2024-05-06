@@ -5,8 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
@@ -14,7 +14,7 @@ import 'package:tunemix_apps/screens/story_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
 
 class ViewProfile extends StatefulWidget {
-  const ViewProfile({Key? key}) : super(key: key);
+   const ViewProfile({Key? key}) : super(key: key);
 
   @override
   State<ViewProfile> createState() => _ViewProfileState();
@@ -32,29 +32,29 @@ class _ViewProfileState extends State<ViewProfile> {
 
   File? _imageFile; 
   final ImagePicker _picker = ImagePicker();
+  String? _newImageFilePath;
+  String? _newImageUrl;
 
-  void incrementFollowers() {
-    setState(() {
-      followersCount++;
-    });
-  }
-
-  void incrementFollowing() {
-    setState(() {
-      followingCount++;
-    });
-  }
-
-  void toggleDarkMode() {
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
-  }
+  File? _tempImageFile;
+  String? _tempImageFilePath;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadProfileImage();
+  }
+
+  void incrementFollowers(){
+    setState(() {
+      followersCount++;
+    });
+  }
+
+  void incrementFollowing(){
+    setState(() {
+      followingCount++;
+    });
   }
 
   void _signOut() async {
@@ -92,6 +92,29 @@ class _ViewProfileState extends State<ViewProfile> {
             String email = userData['username'];
             userName = email.split('@')[0];
             isSignedIn = true;
+            _newImageFilePath = userData['profileImageUrl'];
+          });
+        }
+
+
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  Future<void> _loadProfileImage() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+
+        if (userData.exists) {
+          setState(() {
+            _newImageFilePath = userData['profileImageUrl'] ?? '';
           });
         }
       }
@@ -100,29 +123,72 @@ class _ViewProfileState extends State<ViewProfile> {
     }
   }
 
-  void _editPhoto(ImageSource source) async {
+   void _editPhoto(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
+        _tempImageFile = File(pickedFile.path);
+      _tempImageFilePath = pickedFile.path; 
       });
     } else {
       print('No image selected.');
     }
   }
 
-  Widget _buildProfileImage() {
-    if (_imageFile != null) {
-      return Image.file( 
-        _imageFile!,
-        fit: BoxFit.cover,
-      );
-    } else {
-      return Image.network( 
-        'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-        fit: BoxFit.cover,
-      );
+  Future<void> _savePhoto() async {
+    // Upload foto ke Firebase Storage dan update URL di Firestore
+    String? imageUrl = await _uploadImageToFirebase(_tempImageFile!);
+    if (imageUrl != null) {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({'profileImageUrl': imageUrl});
+      }
+
+      setState(() {
+        _newImageFilePath = imageUrl;
+      });
+    } 
+  }
+
+  Future<String?> _uploadImageToFirebase(File imageFile) async {
+    try {
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference ref = FirebaseStorage.instance.ref().
+      child('profile_images/$fileName');
+
+      UploadTask uploadTask = ref.putFile(imageFile);
+      TaskSnapshot snapshot = await uploadTask;
+      String imageUrl = await snapshot.ref.getDownloadURL();
+      return imageUrl;
+    } catch (e) {
+      print('Error uploading image to Firebase: $e');
+      return null;
     }
+  }
+
+  Widget _buildProfileImage() {
+      if (_tempImageFilePath != null) {
+        // Jika ada gambar yang dipilih tetapi belum disimpan, gunakan gambar sementara
+        return Image.file( 
+          _tempImageFile!,
+          fit: BoxFit.cover,
+        );
+      } else if (_newImageFilePath != null) {
+        // Gunakan URL foto terbaru jika ada
+        return Image.network( 
+          _newImageFilePath!,
+          fit: BoxFit.cover,
+        );
+      } else {
+        return Image.network( 
+          'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+          fit: BoxFit.cover,
+        );
+      }
   }
 
   void _showEditProfileBottomSheet(BuildContext context) {
@@ -193,9 +259,8 @@ class _ViewProfileState extends State<ViewProfile> {
                 ),
               ),
               GestureDetector(
-                onTap: () {
-                  // Save logic
-                  // Implement your logic here
+                onTap: ()  {
+                  _savePhoto();
                   Navigator.pop(context);
                 },
                 child: const Text(
@@ -252,28 +317,6 @@ class _ViewProfileState extends State<ViewProfile> {
                     ),
                   ),
                 ],
-              ),
-
-
-              Positioned(
-                bottom: 0,
-                right: 0,
-                left: 83,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                  ),
-                  child: IconButton(
-                    onPressed: () {
-                      _showEditOptions(context);
-                    },
-                    icon: const Icon(
-                      Icons.edit,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -718,7 +761,7 @@ class _ViewProfileState extends State<ViewProfile> {
                 // favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile();
+              return const UserProfile(imageUrl: '',);
             default:
               return Container();
           }

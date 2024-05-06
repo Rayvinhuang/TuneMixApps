@@ -1,6 +1,9 @@
 //import 'package:encrypt/encrypt.dart' as encrypt;
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
@@ -10,7 +13,8 @@ import 'package:tunemix_apps/screens/view_profile_screen.dart';
 
 
 class UserProfile extends StatefulWidget {
-  const UserProfile({Key? key}) : super(key: key);
+  const UserProfile({Key? key, required this.imageUrl}) : super(key: key);
+  final String imageUrl;
 
   @override
   _UserProfileState createState() => _UserProfileState();
@@ -71,8 +75,11 @@ class _UserProfileState extends State<UserProfile> {
   bool isSignedIn = false;
   String userName = '';
   int favoriteCandiCount = 0;
-  final TextEditingController _editedUserNameController =
-      TextEditingController();
+  final TextEditingController _editedUserNameController = TextEditingController();
+
+  File? _tempImageFile;
+  String? _newImageFilePath;
+  String imageUrl = '';
 
   // TODO: 5. Implementasi fungsi signIn
   // void signIn() {
@@ -104,10 +111,12 @@ class _UserProfileState extends State<UserProfile> {
             .get();
 
         if (userData.exists) {
+          String tempProfileImageUrl = userData['profileImageUrl'] ?? '';
           setState(() {
             String email = userData['username'];
             userName = email.split('@')[0];
             isSignedIn = true;
+            imageUrl = userData['profileImageUrl'] ?? ''; 
           });
         }
       }
@@ -115,13 +124,7 @@ class _UserProfileState extends State<UserProfile> {
       print('Error fetching user data: $e');
     }
   }
-
-
-
-  void _signIn() {
-    Navigator.pushNamed(context, '/signin');
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,11 +174,16 @@ class _UserProfileState extends State<UserProfile> {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                         ),
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                        child:  widget.imageUrl.isNotEmpty
+                        ? Image.network(
+                            widget.imageUrl,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.network(
+                            'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+                            fit: BoxFit.cover,
+                          ),
+                       ),
                       Padding(
                         padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 0),
                         child: Column(
@@ -476,7 +484,7 @@ class _UserProfileState extends State<UserProfile> {
               //  favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile();
+              return const UserProfile(imageUrl: '',);
             default:
               return Container();
           }
