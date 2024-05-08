@@ -1,20 +1,20 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
 import 'package:tunemix_apps/screens/story_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
 
+import '../services/auth_service.dart';
+
 class ViewProfile extends StatefulWidget {
-   const ViewProfile({Key? key}) : super(key: key);
+  const ViewProfile({Key? key}) : super(key: key);
 
   @override
   State<ViewProfile> createState() => _ViewProfileState();
@@ -30,19 +30,17 @@ class _ViewProfileState extends State<ViewProfile> {
   int followingCount = 0;
   bool isDarkMode = false;
 
-  File? _imageFile; 
-  final ImagePicker _picker = ImagePicker();
-  String? _newImageFilePath;
-  String? _newImageUrl;
-
   File? _tempImageFile;
   String? _tempImageFilePath;
+  String? _newImageUrl;
+
+  AuthService _authService = AuthService();
+  bool _isImageChanged = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _loadProfileImage();
   }
 
   void incrementFollowers(){
@@ -92,29 +90,7 @@ class _ViewProfileState extends State<ViewProfile> {
             String email = userData['username'];
             userName = email.split('@')[0];
             isSignedIn = true;
-            _newImageFilePath = userData['profileImageUrl'];
-          });
-        }
-
-
-      }
-    } catch (e) {
-      print('Error fetching user data: $e');
-    }
-  }
-
-  Future<void> _loadProfileImage() async {
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        DocumentSnapshot userData = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
-
-        if (userData.exists) {
-          setState(() {
-            _newImageFilePath = userData['profileImageUrl'] ?? '';
+            _tempImageFilePath = userData['profileImageUrl'];
           });
         }
       }
@@ -123,13 +99,12 @@ class _ViewProfileState extends State<ViewProfile> {
     }
   }
 
-   void _editPhoto(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source);
+  void _editPhoto(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
         _tempImageFile = File(pickedFile.path);
-      _tempImageFilePath = pickedFile.path; 
+        _tempImageFilePath = pickedFile.path;
       });
     } else {
       print('No image selected.');
@@ -137,61 +112,24 @@ class _ViewProfileState extends State<ViewProfile> {
   }
 
   Future<void> _savePhoto() async {
-    // Upload foto ke Firebase Storage dan update URL di Firestore
-    String? imageUrl = await _uploadImageToFirebase(_tempImageFile!);
-    if (imageUrl != null) {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .update({'profileImageUrl': imageUrl});
-      }
-
-      setState(() {
-        _newImageFilePath = imageUrl;
-      });
-    } 
-  }
-
-  Future<String?> _uploadImageToFirebase(File imageFile) async {
     try {
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      Reference ref = FirebaseStorage.instance.ref().
-      child('profile_images/$fileName');
-
-      UploadTask uploadTask = ref.putFile(imageFile);
-      TaskSnapshot snapshot = await uploadTask;
-      String imageUrl = await snapshot.ref.getDownloadURL();
-      return imageUrl;
+      if (_tempImageFile != null) {
+        await _authService.updateProfilePhoto(_tempImageFile!);
+      }
     } catch (e) {
-      print('Error uploading image to Firebase: $e');
-      return null;
+      print('Error saving photo: $e');
     }
   }
 
-  Widget _buildProfileImage() {
-      if (_tempImageFilePath != null) {
-        // Jika ada gambar yang dipilih tetapi belum disimpan, gunakan gambar sementara
-        return Image.file( 
-          _tempImageFile!,
-          fit: BoxFit.cover,
-        );
-      } else if (_newImageFilePath != null) {
-        // Gunakan URL foto terbaru jika ada
-        return Image.network( 
-          _newImageFilePath!,
-          fit: BoxFit.cover,
-        );
-      } else {
-        return Image.network( 
-          'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-          fit: BoxFit.cover,
-        );
-      }
+  void _removeCurrentPhoto() async {
+    try {
+      await _authService.removeCurrentPhoto(); 
+    } catch (error) {
+      print('Error removing photo: $error');
+    }
   }
 
-  void _showEditProfileBottomSheet(BuildContext context) {
+    void _showEditProfileBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -223,232 +161,261 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-  Widget _buildBottomSheetContent(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 621,
-      width: 399,
-      color: const Color(0xFF525252).withOpacity(0.2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontFamily: 'Itim',
-                    fontSize: 15,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              const Text(
-                'EDIT PROFILE',
-                textAlign: TextAlign.center,
+    Widget _buildEditOptions(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    color: Colors.transparent,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 16.0),
+          child: Text(
+            'CHANGE PROFILE PHOTO',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Concert One',
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            // Tandai bahwa ada perubahan yang belum disimpan
+            _isImageChanged = true;
+            _editPhoto(ImageSource.gallery);
+          },
+          child: const Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text('Choose from Library'),
+                Divider(color: Colors.black),
+              ],
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            // Tandai bahwa ada perubahan yang belum disimpan
+            _isImageChanged = true;
+            _editPhoto(ImageSource.camera);
+          },
+          child: const Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text('Take Photo'),
+                Divider(color: Colors.black),
+              ],
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            _removeCurrentPhoto();
+          },
+          child: const Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text('Remove Current Photo'),
+                Divider(color: Colors.black),
+              ],
+            ),
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () {
+                // Tandai bahwa perubahan sudah disimpan
+                _isImageChanged = false;
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Cancel',
                 style: TextStyle(
-                  fontFamily: 'Concert One',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              GestureDetector(
-                onTap: ()  {
-                  _savePhoto();
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  'Save',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Itim',
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          const Divider(
-            color: Colors.white,
-            thickness: 1,
-          ),
-          const SizedBox(height: 10),
-
-          Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                    ),
-                    child: _buildProfileImage(), 
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    left: 83,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          _showEditOptions(context);
-                        },
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 30),
-          Row(
-            children: [
-              const Text(
-                'USERNAME',
-                style: TextStyle(
-                  fontFamily: 'Concert One',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontFamily: 'Itim',
                   color: Colors.black,
                 ),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: _editedUserNameController,
-                  onChanged: (value) {
-                    setState(() {
-                      _userName = value;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    hintText: 'Enter new username',
-                    hintStyle: TextStyle(
-                      fontFamily: 'Itim',
-                      fontSize: 13,
-                      color: Colors.black,
-                    ),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildProfileImage() {
+  if (_tempImageFile != null) {
+    // Jika ada gambar yang dipilih tetapi belum disimpan, gunakan gambar sementara
+    return Image.file( 
+      _tempImageFile!,
+      fit: BoxFit.cover,
+    );
+  } else if (_newImageUrl != null) { // Perubahan disini
+    // Gunakan URL foto terbaru jika ada
+    return Image.network( 
+      _newImageUrl!, // Perubahan disini
+      fit: BoxFit.cover,
+    );
+  } else {
+    return Image.network( 
+      'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+      fit: BoxFit.cover,
     );
   }
+}
 
-  Widget _buildEditOptions(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.transparent,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              'CHANGE PROFILE PHOTO',
+
+
+  Widget _buildBottomSheetContent(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    height: 621,
+    width: 399,
+    color: const Color(0xFF525252).withOpacity(0.2),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontFamily: 'Itim',
+                  fontSize: 15,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const Text(
+              'EDIT PROFILE',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
                 fontFamily: 'Concert One',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              _editPhoto(ImageSource.gallery);
-            },
-            child: const Center(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Choose from Library'),
-                  Divider(color: Colors.black),
-                ],
+            GestureDetector(
+              onTap: ()  {
+                _savePhoto();
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Save',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Itim',
+                  fontSize: 15,
+                ),
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              _editPhoto(ImageSource.camera);
-            },
-            child: const Center(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Take Photo'),
-                  Divider(color: Colors.black),
-                ],
+          ],
+        ),
+        const SizedBox(height: 2),
+        const Divider(
+          color: Colors.white,
+          thickness: 1,
+        ),
+        const SizedBox(height: 10),
+
+        Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                  ),
+                  child: _buildProfileImage()
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  left: 83,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        _showEditOptions(context);
+                      },
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 30),
+        Row(
+          children: [
+            const Text(
+              'USERNAME',
+              style: TextStyle(
+                fontFamily: 'Concert One',
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Colors.black,
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              // Lakukan tindakan saat "Remove Current Photo" dipilih
-              // Contoh: Hapus foto profil
-            },
-            child: const Center(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Remove Current Photo'),
-                  Divider(color: Colors.black),
-                ],
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
+            const SizedBox(width: 20),
+            Expanded(
+              flex: 2,
+              child: TextFormField(
+                controller: _editedUserNameController,
+                onChanged: (value) {
+                  setState(() {
+                    _userName = value;
+                  });
                 },
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
+                decoration: const InputDecoration(
+                  hintText: 'Enter new username',
+                  hintStyle: TextStyle(
                     fontFamily: 'Itim',
+                    fontSize: 13,
                     color: Colors.black,
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
                   ),
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -501,7 +468,20 @@ class _ViewProfileState extends State<ViewProfile> {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                         ),
-                        child: _buildProfileImage(),
+                        child: _tempImageFile != null
+                            ? Image.file(
+                                _tempImageFile!,
+                                fit: BoxFit.cover,
+                              )
+                            : (_tempImageFilePath != null
+                                ? Image.network(
+                                    _tempImageFilePath!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.network(
+                                    'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+                                    fit: BoxFit.cover,
+                                  )),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
@@ -725,7 +705,7 @@ class _ViewProfileState extends State<ViewProfile> {
         routeBuilder = '/search';
         break;
       case 2:
-        routeBuilder = '/story';
+        routeBuilder = '/podcast';
         break;
       case 3:
         routeBuilder = '/fav';
@@ -741,6 +721,20 @@ class _ViewProfileState extends State<ViewProfile> {
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 const StoryScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              const begin = 0.0;
+              const end = 1.0;
+              var tween = Tween(begin: begin, end: end);
+
+              var fadeOutAnimation = animation.drive(tween);
+
+              return FadeTransition(
+                opacity: fadeOutAnimation,
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 500),
           ));
     }
 
@@ -758,10 +752,12 @@ class _ViewProfileState extends State<ViewProfile> {
             case 3:
               return const FavoriteScreen(
                 // favoriteSongs: [],
-                // favoritePodcasts: [],
+                //  favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile(imageUrl: '',);
+              return const UserProfile(
+                imageUrl: '',
+              );
             default:
               return Container();
           }

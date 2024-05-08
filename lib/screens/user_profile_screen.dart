@@ -362,7 +362,7 @@ class _UserProfileState extends State<UserProfile> {
           onTap: (index) {
             setState(() {
               _currentIndex = index;
-             // _navigateToPage(index);
+             _navigateToPage(index);
             });
           },
           items: [

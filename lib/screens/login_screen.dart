@@ -200,7 +200,7 @@ class _LoginScreensState extends State<LoginScreen> {
                             color: Colors.transparent,
                           ),
                         ),
-                        child: Image.asset('images/arrowBack.png',
+                        child: Image.asset('assets/images/arrowback.png',
                             width: 35, height: 35),
                       ),
                     ),
