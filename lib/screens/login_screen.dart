@@ -82,7 +82,7 @@ class _LoginScreensState extends State<LoginScreen> {
     if (userCredential.user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const HomeScreen(youtubeAPI: 'AIzaSyCfKYPykxwaHq05BWyYcL6P2wvVwIPyfGI',)),
       );
     } else {
       setState(() {
@@ -200,7 +200,7 @@ class _LoginScreensState extends State<LoginScreen> {
                             color: Colors.transparent,
                           ),
                         ),
-                        child: Image.asset('assets/images/arrowback.png',
+                        child: Image.asset('images/arrowBack.png',
                             width: 35, height: 35),
                       ),
                     ),

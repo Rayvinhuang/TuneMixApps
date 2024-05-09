@@ -10,6 +10,7 @@ import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
 import 'package:tunemix_apps/screens/story_screen.dart';
 import 'package:tunemix_apps/screens/view_profile_screen.dart';
+import 'package:tunemix_apps/youtube_api.dart';
 
 
 class UserProfile extends StatefulWidget {
@@ -201,7 +202,7 @@ class _UserProfileState extends State<UserProfile> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => ViewProfile()), 
+                                  MaterialPageRoute(builder: (context) => ViewProfile(youTubeAPI: )), 
                                 );
                               },
                               child: const Text(
@@ -362,7 +363,7 @@ class _UserProfileState extends State<UserProfile> {
           onTap: (index) {
             setState(() {
               _currentIndex = index;
-             _navigateToPage(index);
+             // _navigateToPage(index);
             });
           },
           items: [
@@ -424,7 +425,7 @@ class _UserProfileState extends State<UserProfile> {
   }
 
 
-  void _navigateToPage(int index) {
+  void _navigateToPage(int index, YouTubeAPI youTubeAPI) {
     var routeBuilder;
     switch (index) {
       case 0:
@@ -473,7 +474,7 @@ class _UserProfileState extends State<UserProfile> {
         pageBuilder: (context, animation, secondaryAnimation) {
           switch (index) {
             case 0:
-              return const HomeScreen();
+              return HomeScreen(youtubeAPI:youTubeAPI,);
             case 1:
               return const SearchScreen();
             case 2:
