@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:tunemix_apps/firebase_options.dart';
+import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/login_screen.dart';
 import 'package:tunemix_apps/screens/landing_screen.dart';
 import 'package:tunemix_apps/screens/signup_screen.dart';
@@ -25,7 +26,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         debugShowCheckedModeBanner: false,
-        home: const UserProfile(imageUrl: '',),
+        home: const HomeScreen(),
         initialRoute: '/',
         routes: {
           '/landing': (context) => const LandingScreen(),
