@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/widgets.dart';
 import 'package:tunemix_apps/screens/forgot_password_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 
@@ -82,7 +83,7 @@ class _LoginScreensState extends State<LoginScreen> {
     if (userCredential.user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen(youtubeAPI: 'AIzaSyCfKYPykxwaHq05BWyYcL6P2wvVwIPyfGI',)),
+        MaterialPageRoute(builder: (context) => const HomeScreen(youtubeAPI: ,)),
       );
     } else {
       setState(() {

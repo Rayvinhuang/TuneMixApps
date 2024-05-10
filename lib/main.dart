@@ -11,13 +11,13 @@ import 'package:tunemix_apps/youtube_api.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  // Inisialisasi YouTube API
-  final youtubeAPI = YouTubeAPI(apiKey: 'AIzaSyCfKYPykxwaHq05BWyYcL6P2wvVwIPyfGI');
+  final youtubeAPI = YouTubeAPI(
+      apiKey: 'AIzaSyCfKYPykxwaHq05BWyYcL6P2wvVwIPyfGI'); // Ganti dengan kunci API YouTube Anda
   runApp(MyApp(youtubeAPI: youtubeAPI));
 }
 
 class MyApp extends StatelessWidget {
-  final YouTubeAPI youtubeAPI; // Tambahkan deklarasi untuk menyimpan instance YouTubeAPI
+  final YouTubeAPI youtubeAPI;
 
   const MyApp({Key? key, required this.youtubeAPI}) : super(key: key);
 
@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(youtubeAPI: youtubeAPI), // Gunakan instance YouTubeAPI yang telah diinisialisasi
+      home: HomeScreen(youtubeAPI: youtubeAPI),
       initialRoute: '/',
       routes: {
         '/': (context) => const LandingScreen(),
@@ -41,3 +41,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
