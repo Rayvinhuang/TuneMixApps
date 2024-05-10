@@ -30,12 +30,9 @@ class _ViewProfileState extends State<ViewProfile> {
   int followingCount = 0;
   bool isDarkMode = false;
 
-  File? _tempImageFile;
-  String? _tempImageFilePath;
-  String? _newImageUrl;
-
   AuthService _authService = AuthService();
-  bool _isImageChanged = false;
+  File? _imageFile;
+  File? _tempImageFile;
 
   @override
   void initState() {
@@ -56,25 +53,34 @@ class _ViewProfileState extends State<ViewProfile> {
   }
 
   void _signOut() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      setState(() {
-        isSignedIn = false;
+      try {
+        await FirebaseAuth.instance.signOut();
+        setState(() {
+          isSignedIn = false;
+        });
+      } catch (e) {
+        print('Error signing out: $e');
+      }
+
+      WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
       });
-    } catch (e) {
-      print('Error signing out: $e');
+
+      WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+        Navigator.pushReplacementNamed(context, '/landing');
+      });
+
+      _loadUserData();
     }
 
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+  Future<void> choosePhoto(ImageSource source) async {
+    await _authService.editPhoto(source);
+    setState(() {
+        _tempImageFile = _authService.imageFile;
     });
-
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      Navigator.pushReplacementNamed(context, '/landing');
-    });
-
-    _loadUserData();
+    Navigator.pop(context);
   }
+
 
   Future<void> _loadUserData() async {
     try {
@@ -90,7 +96,7 @@ class _ViewProfileState extends State<ViewProfile> {
             String email = userData['username'];
             userName = email.split('@')[0];
             isSignedIn = true;
-            _tempImageFilePath = userData['profileImageUrl'];
+            _tempImageFile = userData['profileImageUrl'];
           });
         }
       }
@@ -99,17 +105,6 @@ class _ViewProfileState extends State<ViewProfile> {
     }
   }
 
-  void _editPhoto(ImageSource source) async {
-    final pickedFile = await ImagePicker().pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _tempImageFile = File(pickedFile.path);
-        _tempImageFilePath = pickedFile.path;
-      });
-    } else {
-      print('No image selected.');
-    }
-  }
 
   Future<void> _savePhoto() async {
     try {
@@ -121,15 +116,7 @@ class _ViewProfileState extends State<ViewProfile> {
     }
   }
 
-  void _removeCurrentPhoto() async {
-    try {
-      await _authService.removeCurrentPhoto(); 
-    } catch (error) {
-      print('Error removing photo: $error');
-    }
-  }
-
-    void _showEditProfileBottomSheet(BuildContext context) {
+  void _showEditProfileBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -161,7 +148,7 @@ class _ViewProfileState extends State<ViewProfile> {
     );
   }
 
-    Widget _buildEditOptions(BuildContext context) {
+  Widget _buildEditOptions(BuildContext context) {
   return Container(
     padding: const EdgeInsets.all(16),
     color: Colors.transparent,
@@ -182,11 +169,7 @@ class _ViewProfileState extends State<ViewProfile> {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            // Tandai bahwa ada perubahan yang belum disimpan
-            _isImageChanged = true;
-            _editPhoto(ImageSource.gallery);
-          },
+          onTap: ()=> choosePhoto(ImageSource.gallery),
           child: const Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -198,11 +181,7 @@ class _ViewProfileState extends State<ViewProfile> {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            // Tandai bahwa ada perubahan yang belum disimpan
-            _isImageChanged = true;
-            _editPhoto(ImageSource.camera);
-          },
+          onTap: () => choosePhoto(ImageSource.camera),
           child: const Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -214,9 +193,7 @@ class _ViewProfileState extends State<ViewProfile> {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            _removeCurrentPhoto();
-          },
+          onTap: ()  => _authService.removeCurrentPhoto(),
           child: const Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -232,8 +209,6 @@ class _ViewProfileState extends State<ViewProfile> {
           children: [
             TextButton(
               onPressed: () {
-                // Tandai bahwa perubahan sudah disimpan
-                _isImageChanged = false;
                 Navigator.pop(context);
               },
               child: const Text(
@@ -250,29 +225,6 @@ class _ViewProfileState extends State<ViewProfile> {
     ),
   );
 }
-
-Widget _buildProfileImage() {
-  if (_tempImageFile != null) {
-    // Jika ada gambar yang dipilih tetapi belum disimpan, gunakan gambar sementara
-    return Image.file( 
-      _tempImageFile!,
-      fit: BoxFit.cover,
-    );
-  } else if (_newImageUrl != null) { // Perubahan disini
-    // Gunakan URL foto terbaru jika ada
-    return Image.network( 
-      _newImageUrl!, // Perubahan disini
-      fit: BoxFit.cover,
-    );
-  } else {
-    return Image.network( 
-      'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-      fit: BoxFit.cover,
-    );
-  }
-}
-
-
 
   Widget _buildBottomSheetContent(BuildContext context) {
   return Container(
@@ -311,8 +263,10 @@ Widget _buildProfileImage() {
             ),
             GestureDetector(
               onTap: ()  {
-                _savePhoto();
-                Navigator.pop(context);
+                 setState(() {
+                    _imageFile = _tempImageFile;
+                  });
+                  Navigator.pop(context);
               },
               child: const Text(
                 'Save',
@@ -345,7 +299,12 @@ Widget _buildProfileImage() {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                   ),
-                  child: _buildProfileImage()
+                  child:  _tempImageFile == null
+                        ? Image.network(
+                            'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+                            fit: BoxFit.cover,
+                          )
+                        : Image.file(_tempImageFile!, fit: BoxFit.cover),
                 ),
                 Positioned(
                   bottom: 0,
@@ -468,20 +427,12 @@ Widget _buildProfileImage() {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                         ),
-                        child: _tempImageFile != null
-                            ? Image.file(
-                                _tempImageFile!,
-                                fit: BoxFit.cover,
-                              )
-                            : (_tempImageFilePath != null
-                                ? Image.network(
-                                    _tempImageFilePath!,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.network(
-                                    'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-                                    fit: BoxFit.cover,
-                                  )),
+                        child: _imageFile == null
+                          ? Image.network(
+                              'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+                              fit: BoxFit.cover,
+                            )
+                          : Image.file(_imageFile!, fit: BoxFit.cover),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
@@ -744,7 +695,7 @@ Widget _buildProfileImage() {
         pageBuilder: (context, animation, secondaryAnimation) {
           switch (index) {
             case 0:
-              return const HomeScreen();
+             // return const HomeScreen();
             case 1:
               return const SearchScreen();
             case 2:

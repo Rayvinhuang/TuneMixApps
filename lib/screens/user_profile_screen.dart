@@ -473,7 +473,7 @@ class _UserProfileState extends State<UserProfile> {
         pageBuilder: (context, animation, secondaryAnimation) {
           switch (index) {
             case 0:
-              return const HomeScreen();
+             // return const HomeScreen();
             case 1:
               return const SearchScreen();
             case 2:
