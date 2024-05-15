@@ -285,7 +285,7 @@ class _ViewProfileState extends State<ViewProfile> {
           thickness: 1,
         ),
         const SizedBox(height: 10),
-
+        
         Stack(
           alignment: Alignment.bottomCenter,
           children: [

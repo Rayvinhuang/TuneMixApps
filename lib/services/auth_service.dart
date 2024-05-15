@@ -1,21 +1,26 @@
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FirebaseFirestore _database = FirebaseFirestore.instance;
+  static final CollectionReference _userCollection =
+      _database.collection('users');
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // Update nama pengguna
+  File? _imageFile;
+  File? get imageFile => _imageFile;
+
   Future<void> updateUserName(String newName) async {
     try {
       User? user = _auth.currentUser;
       if (user != null) {
         await user.updateDisplayName(newName);
-        await _firestore.collection('users').doc(user.uid).update({
+        await _database.collection('users').doc(user.uid).update({
           'username': newName,
         });
       }
@@ -25,14 +30,28 @@ class AuthService {
     }
   }
 
-  // Update foto profil
+  Future<void> editPhoto(ImageSource source) async {
+    try {
+      final pickedFile = await ImagePicker().pickImage(source: source);
+      if (pickedFile != null) {
+        _imageFile = File(pickedFile.path);
+        await updateProfilePhoto(_imageFile!); 
+      } else {
+        print('No image selected.');
+      }
+    } catch (e) {
+      print("Error editing photo: $e");
+      throw e;
+    }
+  }
+
   Future<void> updateProfilePhoto(File newPhoto) async {
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        String photoUrl = await _uploadImageToStorage(newPhoto, user.uid);
+        String photoUrl = await _uploadImageToStorage(newPhoto);
         await user.updatePhotoURL(photoUrl);
-        await _firestore.collection('users').doc(user.uid).update({
+        await _database.collection('users').doc(user.uid).update({
           'profileImageUrl': photoUrl,
         });
       }
@@ -42,10 +61,11 @@ class AuthService {
     }
   }
 
-  // Upload foto ke Firebase Storage dan dapatkan URL-nya
-  Future<String> _uploadImageToStorage(File imageFile, String userId) async {
+  Future<String> _uploadImageToStorage(File imageFile) async {
     try {
-      Reference ref = FirebaseStorage.instance.ref().child('user_photos').child(userId);
+      String userId = _auth.currentUser!.uid;
+      String fileName = '$userId${path.extension(imageFile.path)}'; 
+      Reference ref = _storage.ref().child('profile_images/$fileName');
       UploadTask uploadTask = ref.putFile(imageFile);
       TaskSnapshot snapshot = await uploadTask;
       String downloadUrl = await snapshot.ref.getDownloadURL();
@@ -56,15 +76,15 @@ class AuthService {
     }
   }
 
-   Future<void> removeCurrentPhoto() async {
+  Future<void> removeCurrentPhoto() async {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser != null) {
-        // Mendapatkan referensi foto dari Firebase Storage
         final ref = _storage.ref('profile_images/${currentUser.uid}');
-
-        // Menghapus foto dari Firebase Storage
         await ref.delete();
+        await _database.collection('users').doc(currentUser.uid).update({
+          'profileImageUrl': FieldValue.delete(),
+        });
       }
     } catch (error) {
       print('Error removing photo: $error');

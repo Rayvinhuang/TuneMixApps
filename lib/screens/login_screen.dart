@@ -80,10 +80,10 @@ class _LoginScreensState extends State<LoginScreen> {
 
     // If login successful, navigate to home screen
     if (userCredential.user != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => const HomeScreen()),
+      // );
     } else {
       setState(() {
         _errorText = 'Invalid username or password';

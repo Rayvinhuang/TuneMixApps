@@ -770,56 +770,56 @@
 //   //   });
 //   // }
 // }
-import 'package:flutter/material.dart';
-import 'package:youtube_api/youtube_api.dart';
+// import 'package:flutter/material.dart';
+// import 'package:youtube_api/youtube_api.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+// class HomeScreen extends StatefulWidget {
+//   const HomeScreen({Key? key}) : super(key: key);
 
-  @override
-  _HomeScreenState createState() => _HomeScreenState();
-}
+//   @override
+//   _HomeScreenState createState() => _HomeScreenState();
+// }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final String apiKey = 'AIzaSyCj4WscNwHbvq3OmDgb89uFPQTFi7R8XPA';
-  final youtubeAPI = YouTubeAPI(apiKey, maxResults: 10);
-  late List<YT_API> _videos;
+// class _HomeScreenState extends State<HomeScreen> {
+//   final String apiKey = 'AIzaSyCj4WscNwHbvq3OmDgb89uFPQTFi7R8XPA';
+//   final youtubeAPI = YouTubeAPI(apiKey, maxResults: 10);
+//   late List<YT_API> _videos;
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchYouTubeVideos();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchYouTubeVideos();
+//   }
 
-  Future<void> _fetchYouTubeVideos() async {
-    try {
-      YoutubeSearchResponse result = await youtubeAPI.search('Music');
-      setState(() {
-        _videos = result.results;
-      });
-    } catch (e) {
-      print('Error fetching YouTube videos: $e');
-    }
-  }
+//   Future<void> _fetchYouTubeVideos() async {
+//     try {
+//       YoutubeSearchResponse result = await youtubeAPI.search('Music');
+//       setState(() {
+//         _videos = result.results;
+//       });
+//     } catch (e) {
+//       print('Error fetching YouTube videos: $e');
+//     }
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-      ),
-      body: ListView.builder(
-        itemCount: _videos.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(_videos[index].title),
-            subtitle: Image.network(_videos[index].thumbnail['default']['url']),
-            onTap: () {
-              // Tambahkan logika untuk menangani ketika video dipilih
-            },
-          );
-        },
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Home'),
+//       ),
+//       body: ListView.builder(
+//         itemCount: _videos.length,
+//         itemBuilder: (context, index) {
+//           return ListTile(
+//             title: Text(_videos[index].title),
+//             subtitle: Image.network(_videos[index].thumbnail['default']['url']),
+//             onTap: () {
+//               // Tambahkan logika untuk menangani ketika video dipilih
+//             },
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
