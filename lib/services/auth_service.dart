@@ -15,17 +15,16 @@ class AuthService {
   File? _imageFile;
   File? get imageFile => _imageFile;
 
-  Future<void> updateUserName(String newName) async {
+  Future<void> editUsername(String newUsername) async {
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        await user.updateDisplayName(newName);
         await _database.collection('users').doc(user.uid).update({
-          'username': newName,
+          'username': newUsername,
         });
       }
     } catch (e) {
-      print("Error updating username: $e");
+      print('Error editing username: $e');
       throw e;
     }
   }
@@ -35,7 +34,7 @@ class AuthService {
       final pickedFile = await ImagePicker().pickImage(source: source);
       if (pickedFile != null) {
         _imageFile = File(pickedFile.path);
-        await updateProfilePhoto(_imageFile!); 
+        await updateProfilePhoto(_imageFile!);
       } else {
         print('No image selected.');
       }
@@ -64,7 +63,7 @@ class AuthService {
   Future<String> _uploadImageToStorage(File imageFile) async {
     try {
       String userId = _auth.currentUser!.uid;
-      String fileName = '$userId${path.extension(imageFile.path)}'; 
+      String fileName = '$userId${path.extension(imageFile.path)}';
       Reference ref = _storage.ref().child('profile_images/$fileName');
       UploadTask uploadTask = ref.putFile(imageFile);
       TaskSnapshot snapshot = await uploadTask;
@@ -89,5 +88,63 @@ class AuthService {
     } catch (error) {
       print('Error removing photo: $error');
     }
+  }
+
+  Future<void> login(String email, String password) async {
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Simpan data pengguna di Firestore
+      await _saveUserDataToFirestore(userCredential.user!);
+    } catch (e) {
+      print('Login error: $e');
+      throw e;
+    }
+  }
+
+  Future<void> _saveUserDataToFirestore(User user) async {
+    try {
+      DocumentReference userDocRef = _database.collection('users').doc(user.uid);
+
+      await userDocRef.set({
+        'userId': user.uid,
+        'email': user.email ?? '',
+      });
+    } catch (e) {
+      print('Error saving user data to Firestore: $e');
+      throw e;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserData() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      DocumentSnapshot userSnapshot = await _database.collection('users').doc(user.uid).get();
+
+      if (userSnapshot.exists) {
+        return userSnapshot.data() as Map<String, dynamic>?;
+      } else {
+        print('User data not found in Firestore');
+        return null;
+      }
+    } else {
+      print('User not logged in');
+      return null;
+    }
+  }
+
+  static Future<QuerySnapshot> retrieveProfile() {
+    return _userCollection.get();
+  }
+
+  static Stream<List<Map<String, dynamic>>> getProfileList() {
+    return _userCollection.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return doc.data() as Map<String, dynamic>;
+      }).toList();
+    });
   }
 }

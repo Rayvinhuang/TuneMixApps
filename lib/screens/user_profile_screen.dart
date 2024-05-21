@@ -13,8 +13,9 @@ import 'package:tunemix_apps/screens/view_profile_screen.dart';
 
 
 class UserProfile extends StatefulWidget {
-  const UserProfile({Key? key, required this.imageUrl}) : super(key: key);
+  const UserProfile({Key? key, required this.imageUrl, required this.userName}) : super(key: key);
   final String imageUrl;
+  final String userName;
 
   @override
   _UserProfileState createState() => _UserProfileState();
@@ -75,7 +76,6 @@ class _UserProfileState extends State<UserProfile> {
   bool isSignedIn = false;
   String userName = '';
   int favoriteCandiCount = 0;
-  final TextEditingController _editedUserNameController = TextEditingController();
 
   File? _tempImageFile;
   String? _newImageFilePath;
@@ -190,7 +190,7 @@ class _UserProfileState extends State<UserProfile> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              userName,
+                              '$userName',
                               style: const TextStyle(
                                 fontFamily: 'Inknut Antiqua', 
                                 fontWeight: FontWeight.bold, 
@@ -201,7 +201,7 @@ class _UserProfileState extends State<UserProfile> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => ViewProfile()), 
+                                  MaterialPageRoute(builder: (context) => ViewProfile(userName: '', imageUrl: '',)), 
                                 );
                               },
                               child: const Text(
@@ -214,38 +214,6 @@ class _UserProfileState extends State<UserProfile> {
                           ],
                         ),
                       ),
-
-                      // Expanded(
-                      //   child: Align(
-                      //     alignment: AlignmentDirectional(1, 0),
-                      //     child: ElevatedButton(
-                      //       onPressed: () {
-                      //         signOut();
-                      //       },
-                      //       style: ElevatedButton.styleFrom(
-                      //         backgroundColor: Colors.black,
-                      //         padding: const EdgeInsetsDirectional.fromSTEB(
-                      //             24, 0, 24, 0),
-                      //         elevation: 3,
-                      //         side: const BorderSide(
-                      //           color: Color(0xFF8E00FF),
-                      //           width: 1,
-                      //         ),
-                      //         shape: RoundedRectangleBorder(
-                      //           borderRadius: BorderRadius.circular(8),
-                      //         ),
-                      //       ),
-                      //       child: const Text(
-                      //         'Sign Out',
-                      //         style: TextStyle(
-                      //           fontFamily: 'Readex Pro',
-                      //           color: Colors.white,
-                      //           fontSize: 10,
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
 
@@ -484,7 +452,7 @@ class _UserProfileState extends State<UserProfile> {
               //  favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile(imageUrl: '',);
+              return const UserProfile(imageUrl: '', userName: '',);
             default:
               return Container();
           }

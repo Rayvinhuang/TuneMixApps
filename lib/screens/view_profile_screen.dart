@@ -14,7 +14,10 @@ import 'package:tunemix_apps/screens/user_profile_screen.dart';
 import '../services/auth_service.dart';
 
 class ViewProfile extends StatefulWidget {
-  const ViewProfile({Key? key}) : super(key: key);
+  final String userName;
+  final String imageUrl;
+
+  const ViewProfile({Key? key, required this.userName, required this.imageUrl}) : super(key: key);
 
   @override
   State<ViewProfile> createState() => _ViewProfileState();
@@ -31,13 +34,17 @@ class _ViewProfileState extends State<ViewProfile> {
   bool isDarkMode = false;
 
   AuthService _authService = AuthService();
+  final FirebaseFirestore _database = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   File? _imageFile;
   File? _tempImageFile;
+  String _tempUsername = '';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+     _getUserInfo();
   }
 
   void incrementFollowers(){
@@ -81,6 +88,39 @@ class _ViewProfileState extends State<ViewProfile> {
     Navigator.pop(context);
   }
 
+  Future<void> _getUserInfo() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      // Fetch username from Firestore
+      DocumentSnapshot userInfo =
+          await _database.collection('users').doc(user.uid).get();
+
+      setState(() {
+        _userName = userInfo['username'];
+        _tempUsername = _userName; // Initialize temporary username
+        _editedUserNameController.text = _userName; // Set text controller
+      });
+    }
+  }
+
+  
+  Future<void> _updateUsername() async {
+    String newUsername = _editedUserNameController.text.trim();
+    // Panggil editUsername dari service Anda
+    try {
+      await AuthService().editUsername(newUsername);
+      setState(() {
+        _userName = newUsername;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Username updated successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update username: $e')),
+      );
+    }
+  }
 
   Future<void> _loadUserData() async {
     try {
@@ -97,6 +137,8 @@ class _ViewProfileState extends State<ViewProfile> {
             userName = email.split('@')[0];
             isSignedIn = true;
             _tempImageFile = userData['profileImageUrl'];
+            followersCount = userData['followersCount'] ?? 0;
+            followingCount = userData['followingCount'] ?? 0;
           });
         }
       }
@@ -104,7 +146,6 @@ class _ViewProfileState extends State<ViewProfile> {
       print('Error fetching user data: $e');
     }
   }
-
 
   Future<void> _savePhoto() async {
     try {
@@ -265,6 +306,7 @@ class _ViewProfileState extends State<ViewProfile> {
               onTap: ()  {
                  setState(() {
                     _imageFile = _tempImageFile;
+                    _userName = _tempUsername; 
                   });
                   Navigator.pop(context);
               },
@@ -349,7 +391,7 @@ class _ViewProfileState extends State<ViewProfile> {
                 controller: _editedUserNameController,
                 onChanged: (value) {
                   setState(() {
-                    _userName = value;
+                    _tempUsername = value;
                   });
                 },
                 decoration: const InputDecoration(
@@ -440,7 +482,7 @@ class _ViewProfileState extends State<ViewProfile> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '$userName',
+                              '$_userName',
                               style: const TextStyle(
                                 fontFamily: 'Inknut Antiqua',
                                 fontWeight: FontWeight.bold,
@@ -707,7 +749,7 @@ class _ViewProfileState extends State<ViewProfile> {
               );
             case 4:
               return const UserProfile(
-                imageUrl: '',
+                imageUrl: '', userName: '',
               );
             default:
               return Container();

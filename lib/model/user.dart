@@ -1,27 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Music{
+class User{
   String? id;
-  final String username;
+  String email;
   final String password;
   String? imageUrl;
   Timestamp? createdAt;
   Timestamp? updatedAt;
 
-  Music({
+  User({
     this.id,
-    required this.username,
+    required this.email,
     required this.password,
     this.imageUrl,
     this.createdAt,
     this.updatedAt,
   });
 
-  factory Music.fromDocument(DocumentSnapshot doc) {
+  factory User.fromDocument(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Music(
+    return User(
       id: doc.id,
-      username: data['username'],
+      email: data['email'],
       password: data['password'],
       imageUrl: data['image_url'],
       createdAt: data['created_at'] as Timestamp,
@@ -31,7 +31,7 @@ class Music{
 
   Map<String, dynamic> toDocument() {
     return {
-      'username': username,
+      'email': email,
       'password': password,
       'image_url': imageUrl,
       'created_at': createdAt,

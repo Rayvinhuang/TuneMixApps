@@ -13,7 +13,7 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _fNameController = TextEditingController();
   final TextEditingController _lNameController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _cfPasswordController = TextEditingController();
 
@@ -23,7 +23,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signUp() async {
     final String fName = _fNameController.text.trim();
     final String lName = _lNameController.text.trim();
-    final String username = _usernameController.text.trim() + '@gmail.com';
+    final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
     final String cfPw = _cfPasswordController.text.trim();
 
@@ -55,7 +55,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: username, password: password);
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       // Simpan data pengguna di Firestore
       await FirebaseFirestore.instance
@@ -64,7 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
           .set({
         'first_name': fName,
         'last_name': lName,
-        'username': _usernameController.text.trim(),
+        'email': _emailController.text,
         'password': password,
         'confirm_password': cfPw
       });
@@ -82,7 +82,7 @@ class _SignupScreenState extends State<SignupScreen> {
   void dispose() {
     _fNameController.dispose();
     _lNameController.dispose();
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _cfPasswordController.dispose();
     super.dispose();
@@ -212,13 +212,13 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                             const SizedBox(height: 10),
                             const Text(
-                              'Username',
+                              'Email',
                               style: TextStyle(
                                   fontFamily: 'Belgrano', fontSize: 20),
                             ),
                             TextFormField(
                               cursorColor: const Color(0xFF000AFF),
-                              controller: _usernameController,
+                              controller: _emailController,
                               decoration: const InputDecoration(
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.all(Radius.circular(15.0)),

@@ -8,6 +8,8 @@ import 'package:tunemix_apps/screens/forgot_password_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
 
+import '../services/auth_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -17,7 +19,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreensState extends State<LoginScreen> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   String _errorText = '';
@@ -25,8 +27,11 @@ class _LoginScreensState extends State<LoginScreen> {
   bool rememberMe = false;
   bool _isLogin = false;
   bool _obscurePassword = true;
-  String _usernameError = '';
+  String _emailError = '';
   String _passwordError = '';
+
+  final AuthService _authService = AuthService();
+   final FirebaseFirestore _database = FirebaseFirestore.instance;
 
   // Future<Map<String, String>> _retrieveAndDecryptDataFromPrefs(
   //     SharedPreferences sharedPreferences) async {
@@ -50,72 +55,91 @@ class _LoginScreensState extends State<LoginScreen> {
 
 
   bool isFieldsValid() {
-    return _usernameController.text.isNotEmpty &&
+    return _emailController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty;
   }
 
-  Future<void> _login() async {
-    final String username = _usernameController.text.trim() + '@gmail.com';
+   Future<void> _login() async {
+    final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
 
-
-    if (username.isEmpty) {
     setState(() {
-      _usernameError = 'Username is required'; 
+      _emailError;
+      _passwordError;
+      _errorText;
     });
-    return;
-  }
 
-  if (password.isEmpty) {
-    setState(() {
-      _passwordError = 'Password is required';
-    });
-    return;
-  }
-
-  try {
-    final UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: username,
-      password: password,
-    );
-
-    // If login successful, navigate to home screen
-    if (userCredential.user != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const UserProfile(imageUrl: '',)),
-      );
-    } else {
+    if (email.isEmpty) {
       setState(() {
-        _errorText = 'Invalid username or password';
+        _emailError = 'Email is required';
       });
+      return;
     }
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'user-not-found') {
+
+    if (password.isEmpty) {
       setState(() {
-        _usernameError = 'Invalid username';
+        _passwordError = 'Password is required';
       });
-    } else if (e.code == 'wrong-password') {
-      setState(() {
-        _passwordError = 'Invalid password';
-      });
-    } else {
+      return;
+    }
+
+    try {
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Simpan data pengguna di Firestore
+      if (userCredential.user != null) {
+        await _saveUserDataToFirestore(userCredential.user!);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserProfile(imageUrl: '', userName: '',)),
+        );
+      } else {
+        setState(() {
+          _errorText = 'Invalid Email or Password';
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        setState(() {
+          _emailError = 'Invalid Email';
+        });
+      } else if (e.code == 'wrong-password') {
+        setState(() {
+          _passwordError = 'Invalid password';
+        });
+      } else {
+        setState(() {
+          _errorText = 'An error occurred, please try again later';
+        });
+      }
+    } catch (error) {
+      print(error.toString());
       setState(() {
         _errorText = 'An error occurred, please try again later';
       });
     }
-  } catch (error) {
-    print(error.toString());
-    setState(() {
-      _errorText = 'An error occurred, please try again later';
-    });
   }
-}
 
+   Future<void> _saveUserDataToFirestore(User user) async {
+    try {
+      DocumentReference userDocRef = _database.collection('users').doc(user.uid);
+
+      await userDocRef.set({
+        'userId': user.uid,
+        'email': user.email ?? '',
+      });
+    } catch (e) {
+      print('Error saving user data to Firestore: $e');
+      throw e;
+    }
+  }
 
   void handleResetPassword(String newPassword) async {
     print('New Password: $newPassword');
-    
   }
 
   void handleForgotPassword() {
@@ -231,16 +255,16 @@ class _LoginScreensState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Username',
+                            'Email',
                             style:
                                 TextStyle(fontFamily: 'Belgrano', fontSize: 25),
                           ),
                           TextFormField(
-                            controller: _usernameController,
+                            controller: _emailController,
                             cursorColor: const Color(0xFF000AFF),
                             decoration: InputDecoration(
-                                errorText:_errorText == 'Username is required'
-                            ? 'Username is required'
+                                errorText:_errorText == 'Email is required'
+                            ? 'Email is required'
                             : null,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15.0),
@@ -261,7 +285,7 @@ class _LoginScreensState extends State<LoginScreen> {
                             ),
                           ),
                           Text(
-                            _usernameError,
+                            _emailError,
                             style: const TextStyle(color: Colors.red),
                           ),
                           const Text(
