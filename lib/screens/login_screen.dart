@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tunemix_apps/screens/forgot_password_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
+import 'package:tunemix_apps/screens/user_profile_screen.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -80,10 +81,10 @@ class _LoginScreensState extends State<LoginScreen> {
 
     // If login successful, navigate to home screen
     if (userCredential.user != null) {
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const HomeScreen()),
-      // );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const UserProfile(imageUrl: '',)),
+      );
     } else {
       setState(() {
         _errorText = 'Invalid username or password';
