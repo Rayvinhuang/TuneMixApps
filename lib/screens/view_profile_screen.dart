@@ -2,13 +2,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
-import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
-import 'package:tunemix_apps/screens/story_screen.dart';
+import 'package:tunemix_apps/screens/story_list_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
 
 import '../services/auth_service.dart';
@@ -713,7 +711,7 @@ class _ViewProfileState extends State<ViewProfile> {
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const StoryScreen(),
+                const StoryListScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               const begin = 0.0;
@@ -741,7 +739,7 @@ class _ViewProfileState extends State<ViewProfile> {
             case 1:
               return const SearchScreen();
             case 2:
-              return const StoryScreen();
+              return const StoryListScreen();
             case 3:
               return const FavoriteScreen(
                 // favoriteSongs: [],

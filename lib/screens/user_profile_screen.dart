@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/home_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
-import 'package:tunemix_apps/screens/story_screen.dart';
+import 'package:tunemix_apps/screens/story_list_screen.dart';
 import 'package:tunemix_apps/screens/view_profile_screen.dart';
 
 
@@ -358,7 +358,7 @@ class _UserProfileState extends State<UserProfile> {
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const StoryScreen(),
+                const StoryListScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               const begin = 0.0;
@@ -386,7 +386,7 @@ class _UserProfileState extends State<UserProfile> {
             case 1:
               return const SearchScreen();
             case 2:
-              return const StoryScreen();
+              return const StoryListScreen();
             case 3:
               return const FavoriteScreen(
                // favoriteSongs: [],

@@ -1,14 +1,13 @@
 {
   "project_info": {
-    "project_number": "1078918469373",
-    "firebase_url": "https://tunemix-e7687-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "tunemix-e7687",
-    "storage_bucket": "tunemix-e7687.appspot.com"
+    "project_number": "678782068460",
+    "project_id": "tunemix-422805",
+    "storage_bucket": "tunemix-422805.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1078918469373:android:5c031b4657ec42f5b69094",
+        "mobilesdk_app_id": "1:678782068460:android:046b81787847a26c5227c9",
         "android_client_info": {
           "package_name": "com.example.tunemix_apps"
         }
@@ -16,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB2dnbxw-atiKLfQ0hgjcdVBQj3iXxebJc"
+          "current_key": "AIzaSyBT9o5AjU4FLJ2lXeAlsPCCMeBY6279YSw"
         }
       ],
       "services": {
