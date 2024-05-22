@@ -8,6 +8,7 @@ import 'package:tunemix_apps/screens/favorite_screen.dart';
 import 'package:tunemix_apps/screens/search_screen.dart';
 import 'package:tunemix_apps/screens/story_list_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import '../services/auth_service.dart';
 
@@ -89,36 +90,44 @@ class _ViewProfileState extends State<ViewProfile> {
   Future<void> _getUserInfo() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      // Fetch username from Firestore
       DocumentSnapshot userInfo =
           await _database.collection('users').doc(user.uid).get();
 
       setState(() {
         _userName = userInfo['username'];
-        _tempUsername = _userName; // Initialize temporary username
-        _editedUserNameController.text = _userName; // Set text controller
+        _tempUsername = _userName; 
+        _editedUserNameController.text = _userName; 
       });
     }
   }
 
-  
   Future<void> _updateUsername() async {
     String newUsername = _editedUserNameController.text.trim();
-    // Panggil editUsername dari service Anda
     try {
       await AuthService().editUsername(newUsername);
-      setState(() {
-        _userName = newUsername;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Username updated successfully')),
-      );
+
+      // Update username di dalam Firestore
+      User? user = _auth.currentUser;
+      if (user != null) {
+        await _database.collection('users').doc(user.uid).update({
+          'username': newUsername,
+        });
+
+        setState(() {
+          _userName = newUsername;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username updated successfully')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update username: $e')),
       );
     }
   }
+
 
   Future<void> _loadUserData() async {
     try {
@@ -131,7 +140,7 @@ class _ViewProfileState extends State<ViewProfile> {
 
         if (userData.exists) {
           setState(() {
-            String email = userData['username'];
+            String email = userData['userName'];
             userName = email.split('@')[0];
             isSignedIn = true;
             _tempImageFile = userData['profileImageUrl'];
@@ -739,15 +748,15 @@ class _ViewProfileState extends State<ViewProfile> {
             case 1:
               return const SearchScreen();
             case 2:
-              return const StoryListScreen();
+             return const StoryListScreen();
             case 3:
               return const FavoriteScreen(
                 // favoriteSongs: [],
                 //  favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile(
-                imageUrl: '', userName: '',
+              return  UserProfile(
+                imageUrl: '', userName: userName,
               );
             default:
               return Container();

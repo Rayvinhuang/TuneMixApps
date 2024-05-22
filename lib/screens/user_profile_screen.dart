@@ -1,4 +1,3 @@
-//import 'package:encrypt/encrypt.dart' as encrypt;
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,22 +12,20 @@ import 'package:tunemix_apps/screens/view_profile_screen.dart';
 
 
 class UserProfile extends StatefulWidget {
-  const UserProfile({Key? key, required this.imageUrl, required this.userName}) : super(key: key);
   final String imageUrl;
   final String userName;
+
+  const UserProfile({Key? key, required this.imageUrl, required this.userName}) : super(key: key);
 
   @override
   _UserProfileState createState() => _UserProfileState();
 }
 
 class _UserProfileState extends State<UserProfile> {
-  // late final Future<SharedPreferences> prefsFuture;
-  // bool isSignedIn = true;
-  // String fullName = '';
-  // String userName = '';
   int _currentIndex = 4;
 
   bool isSignedIn = false;
+  String _userName = 'Initial Username';
   String userName = '';
   int favoriteCandiCount = 0;
 
@@ -36,8 +33,8 @@ class _UserProfileState extends State<UserProfile> {
   String? _newImageFilePath;
   String imageUrl = '';
 
-
-  @override
+  
+  @override 
   void initState() {
     super.initState();
     _loadUserData();
@@ -55,7 +52,7 @@ class _UserProfileState extends State<UserProfile> {
         if (userData.exists) {
           setState(() {
             String email = userData['email'];
-            userName = email.split('@')[0];
+            String userName = email.split('@')[0].replaceAll('.', '');
             isSignedIn = true;
             imageUrl = userData['profileImageUrl'] ?? ''; 
           });
@@ -115,40 +112,42 @@ class _UserProfileState extends State<UserProfile> {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                         ),
-                        child:  widget.imageUrl.isNotEmpty
-                        ? Image.network(
-                            widget.imageUrl,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
-                            fit: BoxFit.cover,
-                          ),
-                       ),
+                        child: widget.imageUrl.isNotEmpty
+                            ? Image.network(
+                                widget.imageUrl,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                'https://images.unsplash.com/photo-1519283053578-3efb9d2e71bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NTYyMDF8MHwxfHNlYXJjaHw4fHxjYXJ0b29uJTIwcHJvZmlsZXxlbnwwfHx8fDE3MDI5MTExMzl8MA&ixlib=rb-4.0.3&q=80&w=1080',
+                                fit: BoxFit.cover,
+                              ),
+                      ),
                       Padding(
                         padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '$userName',
+                              widget.userName,
                               style: const TextStyle(
                                 fontFamily: 'Inknut Antiqua', 
                                 fontWeight: FontWeight.bold, 
-                                fontSize:  20),
+                                fontSize:  20,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const ViewProfile(userName: '', imageUrl: '',)), 
+                                  MaterialPageRoute(builder: (context) =>  ViewProfile(userName: userName, imageUrl: imageUrl,)), 
                                 );
                               },
                               child: const Text(
                                 'View Profile',
                                 style: TextStyle(
-                                  fontFamily: 'Inria Sans', fontSize: 12
+                                  fontFamily: 'Inria Sans', 
+                                  fontSize: 12,
                                 ),
                               ),
                             ),
@@ -157,7 +156,6 @@ class _UserProfileState extends State<UserProfile> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 20),
                   GestureDetector(
                     onTap: () {
@@ -386,14 +384,14 @@ class _UserProfileState extends State<UserProfile> {
             case 1:
               return const SearchScreen();
             case 2:
-              return const StoryListScreen();
+             return const StoryListScreen();
             case 3:
               return const FavoriteScreen(
                // favoriteSongs: [],
               //  favoritePodcasts: [],
               );
             case 4:
-              return const UserProfile(imageUrl: '', userName: '',);
+              return  UserProfile(imageUrl: '', userName: userName);
             default:
               return Container();
           }

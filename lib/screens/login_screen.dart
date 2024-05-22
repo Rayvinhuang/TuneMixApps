@@ -33,27 +33,6 @@ class _LoginScreensState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
    final FirebaseFirestore _database = FirebaseFirestore.instance;
 
-  // Future<Map<String, String>> _retrieveAndDecryptDataFromPrefs(
-  //     SharedPreferences sharedPreferences) async {
-  //   final encryptedUsername = sharedPreferences.getString('Username') ?? '';
-  //   final encryptedPassword = sharedPreferences.getString('Password') ?? '';
-  //   final keyString = sharedPreferences.getString('key') ?? '';
-  //   final ivString = sharedPreferences.getString('iv') ?? '';
-  //   final encrypt.Key key = encrypt.Key.fromBase64(keyString);
-  //   final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
-  //   final encrypter = encrypt.Encrypter(encrypt.AES(key));
-
-  //   try {
-  //     final decryptedUsername = encrypter.decrypt64(encryptedUsername, iv: iv);
-  //     final decryptedPassword = encrypter.decrypt64(encryptedPassword, iv: iv);
-  //     return {'Username': decryptedUsername, 'Password': decryptedPassword};
-  //   } catch (e) {
-  //     print('An error occurred during decryption: $e');
-  //     return {'Username': '', 'Password': ''};
-  //   }
-  // }
-
-
   bool isFieldsValid() {
     return _emailController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty;
@@ -93,9 +72,11 @@ class _LoginScreensState extends State<LoginScreen> {
       if (userCredential.user != null) {
         await _saveUserDataToFirestore(userCredential.user!);
 
+        String userName = email.split('@')[0].replaceAll('.', '');
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const UserProfile(imageUrl: '', userName: '',)),
+          MaterialPageRoute(builder: (context) =>  UserProfile(imageUrl: '', userName: userName)),
         );
       } else {
         setState(() {
@@ -126,11 +107,14 @@ class _LoginScreensState extends State<LoginScreen> {
 
    Future<void> _saveUserDataToFirestore(User user) async {
     try {
+      String email = user.email ?? '';
+      String userName = email.split('@')[0].replaceAll('.', '');
       DocumentReference userDocRef = _database.collection('users').doc(user.uid);
 
       await userDocRef.set({
         'userId': user.uid,
         'email': user.email ?? '',
+        'username': userName,
       });
     } catch (e) {
       print('Error saving user data to Firestore: $e');

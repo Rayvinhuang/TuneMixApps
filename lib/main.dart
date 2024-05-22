@@ -9,6 +9,7 @@ import 'package:tunemix_apps/screens/signup_screen.dart';
 import 'package:tunemix_apps/screens/story_list_screen.dart';
 import 'package:tunemix_apps/screens/user_profile_screen.dart';
 import 'package:tunemix_apps/screens/view_profile_screen.dart';
+import 'package:tunemix_apps/widgets/newsong.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         debugShowCheckedModeBanner: false,
-        home: LandingScreen(),
+        home: NewSongScreen(),
         initialRoute: '/',
         routes: {
           '/landing': (context) => const LandingScreen(),
