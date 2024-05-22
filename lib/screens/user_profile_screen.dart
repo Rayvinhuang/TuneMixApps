@@ -26,52 +26,7 @@ class _UserProfileState extends State<UserProfile> {
   // bool isSignedIn = true;
   // String fullName = '';
   // String userName = '';
-  // int favoriteCandiCount = 0;
   int _currentIndex = 4;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   initialize();
-  // }
-
-  // void initialize() async {
-  //   final SharedPreferences prefs = await prefsFuture;
-  //   if (prefs.containsKey('key')) {
-  //     String encryptedFullName = prefs.containsKey('fullname')
-  //         ? prefs.getString('fullname') ?? ''
-  //         : '';
-  //     String encryptedUsername = prefs.getString('username') ?? '';
-
-  //     final encrypt.Key key =
-  //         encrypt.Key.fromBase64(prefs.getString('key') ?? '');
-  //     final iv = encrypt.IV.fromBase64(prefs.getString('iv') ?? '');
-
-  //     final encrypter = encrypt.Encrypter(encrypt.AES(key));
-  //     final decryptedUsername = encrypter.decrypt64(encryptedUsername, iv: iv);
-  //     final decryptedFullname = encrypter.decrypt64(encryptedFullName, iv: iv);
-
-  //     setState(() {
-  //       isSignedIn = prefs.getBool('isSignedIn') ?? false;
-  //       fullName = decryptedFullname;
-  //       userName = decryptedUsername;
-  //     });
-  //   }
-  // }
-
-
-  // // TODO: 6. Implementasi fungsi signOut
-  // void signOut() async {
-  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   prefs.setBool('isSignedIn', false);
-  //   prefs.setString('fullname', ' ');
-  //   prefs.setString('username', '');
-  //   prefs.setString('password', '');
-
-  //   // Navigate back to the previous screen or any other logic you need
-  //   Navigator.of(context).popUntil((route) => route.isFirst);
-  //   Navigator.pushReplacementNamed(context, '/');
-  // }
 
   bool isSignedIn = false;
   String userName = '';
@@ -81,19 +36,6 @@ class _UserProfileState extends State<UserProfile> {
   String? _newImageFilePath;
   String imageUrl = '';
 
-  // TODO: 5. Implementasi fungsi signIn
-  // void signIn() {
-  //   setState(() {
-  //     isSignedIn = !isSignedIn;
-  //   });
-  // }
-
-  //TODO: 6. Implementasi fungsi signOut
-  // void signOut() {
-  //   setState(() {
-  //     isSignedIn = !isSignedIn;
-  //   });
-  // }
 
   @override
   void initState() {
@@ -111,9 +53,8 @@ class _UserProfileState extends State<UserProfile> {
             .get();
 
         if (userData.exists) {
-          String tempProfileImageUrl = userData['profileImageUrl'] ?? '';
           setState(() {
-            String email = userData['username'];
+            String email = userData['email'];
             userName = email.split('@')[0];
             isSignedIn = true;
             imageUrl = userData['profileImageUrl'] ?? ''; 
@@ -201,7 +142,7 @@ class _UserProfileState extends State<UserProfile> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => ViewProfile(userName: '', imageUrl: '',)), 
+                                  MaterialPageRoute(builder: (context) => const ViewProfile(userName: '', imageUrl: '',)), 
                                 );
                               },
                               child: const Text(
@@ -402,7 +343,7 @@ class _UserProfileState extends State<UserProfile> {
         routeBuilder = '/search';
         break;
       case 2:
-        routeBuilder = '/podcast';
+        routeBuilder = '/story';
         break;
       case 3:
         routeBuilder = '/fav';

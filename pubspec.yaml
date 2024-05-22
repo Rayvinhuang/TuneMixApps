@@ -21,6 +21,9 @@ dependencies:
   firebase_storage: ^11.7.4
   youtube_api: ^1.0.4
   path: ^1.9.0
+  youtube_player_flutter: ^9.0.1
+  youtube_explode_dart: ^1.12.4
+  audioplayers: ^6.0.0
 
 dev_dependencies:
   flutter_test:

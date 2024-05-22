@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         debugShowCheckedModeBanner: false,
-        home: const LandingScreen(),
+        home:  HomeScreen(),
         initialRoute: '/',
         routes: {
           '/landing': (context) => const LandingScreen(),

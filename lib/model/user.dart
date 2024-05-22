@@ -5,6 +5,7 @@ class User{
   String email;
   final String password;
   String? imageUrl;
+  String role;
   Timestamp? createdAt;
   Timestamp? updatedAt;
 
@@ -12,6 +13,7 @@ class User{
     this.id,
     required this.email,
     required this.password,
+    required this.role,
     this.imageUrl,
     this.createdAt,
     this.updatedAt,
@@ -24,6 +26,7 @@ class User{
       email: data['email'],
       password: data['password'],
       imageUrl: data['image_url'],
+      role: data['role'],
       createdAt: data['created_at'] as Timestamp,
       updatedAt: data['updated_at'] as Timestamp,
     );
@@ -34,6 +37,7 @@ class User{
       'email': email,
       'password': password,
       'image_url': imageUrl,
+      'role': role,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };

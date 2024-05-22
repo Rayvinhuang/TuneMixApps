@@ -90,21 +90,6 @@ class AuthService {
     }
   }
 
-  Future<void> login(String email, String password) async {
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Simpan data pengguna di Firestore
-      await _saveUserDataToFirestore(userCredential.user!);
-    } catch (e) {
-      print('Login error: $e');
-      throw e;
-    }
-  }
-
   Future<void> _saveUserDataToFirestore(User user) async {
     try {
       DocumentReference userDocRef = _database.collection('users').doc(user.uid);
